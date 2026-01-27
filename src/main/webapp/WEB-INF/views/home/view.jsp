@@ -11,10 +11,13 @@
 <p>${greeting}</p>
 <p>Service : ${obj}</p>
 
-<button id="pythonRestBtn">Python 결과</button>
+<button id="pythonBtn">Python 결과</button>
 <div id="pythonResult"></div>
+<br>
+<button id="pythonRestBtn">Python Rest 결과</button>
+<div id="pythonRestResult"></div>
 <script>
-    $("#pythonRestBtn").on("click", function () {
+    $("#pythonBtn").on("click", function () {
         $.get('/webtest2/home/getPythonResult?type=SSIM', function (data) {
             $("#pythonResult").html("<img src='data:image/jpeg;base64, " + data + "' style='width:100%'>");
         });
@@ -39,6 +42,12 @@
             }
         });
         */
+    });
+
+    $("#pythonRestBtn").on("click", function () {
+        $.get('/webtest2/home/getRestPythonResult?type=SSIM', function (data) {
+            $("#pythonRestResult").html("<img src='data:image/jpeg;base64, " + data + "' style='width:100%'>");
+        });
     });
 </script>
 </body>
