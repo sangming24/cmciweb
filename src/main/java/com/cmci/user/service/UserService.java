@@ -10,9 +10,15 @@ import java.util.Map;
 @Service(value="com.cmci.user.service.UserService")
 public class UserService extends CommonService {
 
-    public UserDto getUserInfo(String userId) {
+    public UserDto getUserInfo(String pUserId) {
         Map<String, String> pMap = new HashMap<>();
-        pMap.put("id", userId);
+        pMap.put("id", pUserId);
+        return (UserDto)this.selectOne("user.selectUserDto", pMap);
+    }
+
+    public UserDto getUserInfo(UserDto pDto) {
+        Map<String, String> pMap = new HashMap<>();
+        pMap.put("id", pDto.getUserId());
         return (UserDto)this.selectOne("user.selectUserDto", pMap);
     }
 

@@ -10,6 +10,8 @@ import java.util.List;
 public class UserDto extends UserVo{
     List<UserDto> userList;
 
+    String chkResult;
+
     int addCnt;
     int modifyCnt;
     int removeCnt;
