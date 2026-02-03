@@ -1,0 +1,59 @@
+[
+  {
+    "id": "P100",
+    "content": "제품 P100",
+    "subgroupStack": true,
+    "subgroupVisibility": true,
+    "_comment": "P100은 P300, P400을 하위 그룹으로 가짐",
+    "nestedGroups": [
+      "P300",
+      "P400"
+    ]
+  },
+  {
+    "id": "P200",
+    "content": "제품 P200",
+    "subgroupStack": true,
+    "subgroupVisibility": true
+  },
+  {
+    "id": "P300",
+    "content": "제품 P300",
+    "subgroupStack": true,
+    "subgroupVisibility": true
+  },
+  {
+    "id": "P400",
+    "content": "제품 P400",
+    "subgroupStack": true,
+    "subgroupVisibility": true
+  },
+  {
+    "id": "P500",
+    "content": "제품 P500",
+    "subgroupStack": true,
+    "subgroupVisibility": true
+  },
+  {
+    "id": "P600",
+    "content": "제품 P600",
+    "subgroupStack": true,
+    "subgroupVisibility": true
+  },
+  {
+    "id": "P700",
+    "content": "제품 P700",
+    "subgroupStack": true,
+    "subgroupVisibility": true,
+    "_comment": "P700은 P800을 하위 그룹으로 가짐",
+    "nestedGroups": [
+      "P800"
+    ]
+  },
+  {
+    "id": "P800",
+    "content": "제품 P800",
+    "subgroupStack": true,
+    "subgroupVisibility": true
+  }
+]
