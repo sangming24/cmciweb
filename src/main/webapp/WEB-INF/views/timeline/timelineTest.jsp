@@ -7,6 +7,7 @@
     <script src="<c:url value="/resources/js/vis/vis-timeline-graph2d.min.js"/>" type="text/javascript"></script>
     <link href="<c:url value="/resources/css/vis/vis-timeline-graph2d.min.css"/>" rel="stylesheet" type="text/css"/>
     <script type="module" src="<c:url value='/resources/js/vis/arrow.js' />"></script>
+    <script src="<c:url value='/resources/js/customArrow.js' />"></script>
     <style>
         body { font-family: Arial; margin: 20px; }
         #timeline { width: 100%; height: 500px; border: 1px solid lightgray; }
@@ -32,7 +33,7 @@
         }
     #container {
       position: relative;
-      width: 800px;
+      width: auto;
       height: 400px;
       border: 1px solid lightgray;
     }
@@ -127,7 +128,6 @@
             //},
             onMove: function(item, callback) {
                 console.log(`[DB 업데이트 시뮬레이션] 아이템 \${item} 변경됨`, item);
-//                drawDependencies(getConnections(items.get()));
                 callback(item);
             },
             onMoving: function (item, callback) {
@@ -137,7 +137,6 @@
                 return "<h1>Loading...</h1>";
             },
             onUpdate: function (item, callback) {
-                console.log(11111111);
                 item.content = prompt('Edit items text:', item.content);
                 console.log(item);
                 if (item.content != null) {
@@ -151,6 +150,7 @@
 
         const container = document.getElementById('timeline');
         timeline = new vis.Timeline(container, items, groups, { ...options, stack: true });
+        const arrows = createArrowManager(timeline, items, itemsData, {color: '#222'});
 
         const arrowsData = [
             {id: '1to2', id_item_1: 1, id_item_2: 2}
@@ -160,7 +160,6 @@
 
         requestAnimationFrame(() => {
             timeline.redraw();
-            drawDependencies(getConnections(items.get()));
         });
 
         // -----------------------
@@ -168,9 +167,9 @@
         // -----------------------
 
         // timeline 변경 시 호출
-        timeline.on('changed', function() {
-            drawDependencies(getConnections(items.get()));
-        });
+//        timeline.on('changed', function() {
+//            drawDependencies(getConnections(items.get()));
+//        });
 
         // 아이템 선택
         timeline.on('select', function(props) {
@@ -200,96 +199,6 @@
                 timeline.setSelection(props.item);
             }
         });
-
-        // -----------------------
-        // 화살표 처리
-        // -----------------------
-        const getItemPos = function(item) {
-            left_x = item.left;
-            top_y = item.parent.top + item.parent.height - item.top - item.height;
-            return {
-                left: left_x,
-                top: top_y,
-                right: left_x + item.width,
-                bottom: top_y + item.height,
-                mid_x: left_x + item.width / 2,
-                mid_y: top_y + item.height / 2,
-                width: item.width,
-                height: item.height
-            };
-        }
-
-        function drawArrows(i, j, index) {
-            var item_i = getItemPos(timeline.itemSet.items[i]);
-            var item_j = getItemPos(timeline.itemSet.items[j]);
-
-            var curveLen = item_i.height * 2; // Length of straight Bezier segment out of the item.
-            item_j.left -= 5; // Space for the arrowhead.
-
-            dependencyPaths[index].setAttribute(
-                "d",
-                "M " +
-                item_i.right +
-                " " +
-                item_i.mid_y +
-                " C " +
-                (item_i.right + curveLen) +
-                " " +
-                item_i.mid_y +
-                " " +
-                (item_j.left - curveLen) +
-                " " +
-                item_j.mid_y +
-                " " +
-                item_j.left +
-                " " +
-                item_j.mid_y
-            );
-        };
-
-        const drawDependencies = dependency => {
-            dependency.map((dep, index) => drawArrows(...dep, index));
-          };
-
-        // Create SVG layer on top of timeline "center" div.
-        svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-        svg.style.position = "absolute";
-        svg.style.top = "0px";
-        svg.style.height = "100%";
-        svg.style.width = "100%";
-        svg.style.display = "block";
-        svg.style.zIndex = "1"; // Should it be above or below? (1 for above, -1 for below)
-        svg.style.pointerEvents = "none"; // To click through, if we decide to put it above other elements.
-        timeline.dom.center.appendChild(this.svg);
-
-        // Add arrowhead definition to SVG.
-        var arrowHead = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-        arrowHead.setAttribute("id", "arrowhead0");
-        arrowHead.setAttribute("viewBox", "-10 -5 10 10");
-        arrowHead.setAttribute("refX", "-7");
-        arrowHead.setAttribute("refY", "0");
-        arrowHead.setAttribute("markerUnits", "strokeWidth");
-        arrowHead.setAttribute("markerWidth", "3");
-        arrowHead.setAttribute("markerHeight", "3");
-        arrowHead.setAttribute("orient", "auto");
-        var arrowHeadPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        arrowHeadPath.setAttribute("d", "M 0 0 L -10 -5 L -7.5 0 L -10 5 z");
-        arrowHeadPath.style.fill = "#F00";
-        arrowHead.appendChild(arrowHeadPath);
-        svg.appendChild(arrowHead);
-
-        const dependencyPaths = [];
-        for (let i = 0; i < getConnections(items.get()).length; i++) {
-            const somePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            somePath.setAttribute("d", "M 0 0");
-            somePath.setAttribute("marker-end", "url(#arrowhead0)");
-            somePath.style.stroke = "#F00";
-            somePath.style.strokeWidth = "3px";
-            somePath.style.fill = "none";
-            dependencyPaths.push(somePath);
-            svg.appendChild(somePath);
-        }
-
     };
 
     // -----------------------
@@ -380,6 +289,127 @@
 
     loadTimeline();
 
+
+/*
+        // -----------------------
+        // 화살표 처리
+        // -----------------------
+        const getItemPos = function(item) {
+            left_x = item.left;
+            top_y = item.parent.top + item.parent.height - item.top - item.height;
+            return {
+                left: left_x,
+                top: top_y,
+                right: left_x + item.width,
+                bottom: top_y + item.height,
+                mid_x: left_x + item.width / 2,
+                mid_y: top_y + item.height / 2,
+                width: item.width,
+                height: item.height
+            };
+        }
+
+        function drawArrows(i, j, index) {
+            var item_i = getItemPos(timeline.itemSet.items[i]);
+            var item_j = getItemPos(timeline.itemSet.items[j]);
+
+            // 직선형 화살표
+            // start / end (FS 기준)
+            const startX = item_i.right;
+            const startY = item_i.mid_y;
+            const endX   = item_j.left - 6; // arrowhead 공간
+            const endY   = item_j.mid_y;
+
+            let d = "";
+
+            if (Math.abs(startY - endY) < 1) {
+                d = `M \${startX} \${startY} L \${endX} \${endY}`
+            } else {
+                const offsetX = 12;
+                const detourX = 8;
+                const midY = (startY + endY) / 2;
+                const corner = 6;
+
+                d = `
+                    M \${startX} \${startY}
+                    L \${startX + offsetX} \${startY}
+                    L \${startX + offsetX} \${midY}
+                    L \${endX - detourX} \${midY}
+                    L \${endX - detourX} \${endY}
+                    L \${endX} \${endY}
+                `;
+            }
+
+            dependencyPaths[index].setAttribute("d", d);
+
+            // 일정한 커브 형 화살표
+//            var curveLen = item_i.height * 2; // Length of straight Bezier segment out of the item.
+//            item_j.left -= 5; // Space for the arrowhead.
+//
+//            dependencyPaths[index].setAttribute(
+//                "d",
+//                "M " +
+//                item_i.right +
+//                " " +
+//                item_i.mid_y +
+//                " C " +
+//                (item_i.right + curveLen) +
+//                " " +
+//                item_i.mid_y +
+//                " " +
+//                (item_j.left - curveLen) +
+//                " " +
+//                item_j.mid_y +
+//                " " +
+//                item_j.left +
+//                " " +
+//                item_j.mid_y
+//            );
+        };
+
+        const drawDependencies = dependency => {
+            dependency.map((dep, index) => drawArrows(...dep, index));
+          };
+
+        // Create SVG layer on top of timeline "center" div.
+        svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.style.position = "absolute";
+        svg.style.top = "0px";
+        svg.style.height = "100%";
+        svg.style.width = "100%";
+        svg.style.display = "block";
+        svg.style.zIndex = "1"; // Should it be above or below? (1 for above, -1 for below)
+        svg.style.pointerEvents = "none"; // To click through, if we decide to put it above other elements.
+        timeline.dom.center.appendChild(this.svg);
+
+        // Add arrowhead definition to SVG.
+        var arrowHead = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+        arrowHead.setAttribute("id", "arrowhead0");
+        arrowHead.setAttribute("viewBox", "-10 -5 10 10");
+        arrowHead.setAttribute("refX", "-7");
+        arrowHead.setAttribute("refY", "0");
+        arrowHead.setAttribute("markerUnits", "strokeWidth");
+        arrowHead.setAttribute("markerWidth", "3");
+        arrowHead.setAttribute("markerHeight", "3");
+        arrowHead.setAttribute("orient", "auto");
+        var arrowHeadPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        arrowHeadPath.setAttribute("d", "M 0 0 L -10 -5 L -7.5 0 L -10 5 z");
+        arrowHeadPath.style.fill = "#F00";
+        arrowHead.appendChild(arrowHeadPath);
+        svg.appendChild(arrowHead);
+
+        const dependencyPaths = [];
+        for (let i = 0; i < getConnections(items.get()).length; i++) {
+            const somePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            somePath.setAttribute("d", "M 0 0");
+            somePath.setAttribute("marker-end", "url(#arrowhead0)");
+            somePath.style.stroke = "#F00";
+            somePath.style.strokeWidth = "3px";
+            somePath.style.fill = "none";
+            dependencyPaths.push(somePath);
+            svg.appendChild(somePath);
+        }
+*/
 </script>
 </body>
 </html>
