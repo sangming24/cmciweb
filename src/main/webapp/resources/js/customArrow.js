@@ -167,17 +167,26 @@
                 const to = getItemPos(conn.toItem);
 
 
-                const {startX, startY, endX, endY} = getAnchors(conn, from, to);
+                let {startX, startY, endX, endY} = getAnchors(conn, from, to);
 
-                // 같은 fromItem끼리 겹치지 않게 offset 계산
-                const siblings = arr.filter(c => c.fromItem.id === conn.fromItem.id);
-                const laneIndex = siblings.findIndex(c => c === conn);
+                const gap = 6;
+
+                // 출발지 도착지 분산
+                const fromSiblings = arr.filter(c => c.fromItem.id === conn.fromItem.id);
+                const fromLaneIndex = fromSiblings.findIndex(c => c === conn);
+                const fromCount = fromSiblings.length;
+                startY += (fromLaneIndex - (fromCount - 1) / 2) * gap
+
+                const toSiblings = arr.filter(c => c.toItem.id === conn.toItem.id);
+                const toLaneIndex = toSiblings.findIndex(c => c === conn);
+                const toCount = toSiblings.length;
+                endY += (toLaneIndex - (toCount - 1) / 2) * gap
 
                 const baseOffset = conn.options.offset || options.offset;
-                const offset = baseOffset + laneIndex * 6; // 6px씩 계단
+                const offset = baseOffset + fromLaneIndex * 6; // 6px씩 계단
 
                 const baseDetour = conn.options.detour || options.detour;
-                const detour = baseDetour + laneIndex * 6; // 6px씩 계단
+                const detour = baseDetour + toLaneIndex * 6; // 6px씩 계단
                 const midY = (startY + endY) / 2;
                 const corner = 6;
 
