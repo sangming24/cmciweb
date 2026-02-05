@@ -20,22 +20,8 @@
 
         // arrowhead 정의
         const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
-        const arrowHead = document.createElementNS("http://www.w3.org/2000/svg", "marker");
-        arrowHead.setAttribute("id", "arrowhead_auto");
-        arrowHead.setAttribute("viewBox", "-10 -5 10 10");
-        arrowHead.setAttribute("refX", "-7");
-        arrowHead.setAttribute("refY", "0");
-        arrowHead.setAttribute("markerUnits", "strokeWidth");
-        arrowHead.setAttribute("markerWidth", options.arrowSize);
-        arrowHead.setAttribute("markerHeight", options.arrowSize);
-        arrowHead.setAttribute("orient", "auto");
-
-        var arrowHeadPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        arrowHeadPath.setAttribute("d", "M 0 0 L -10 -5 L -7.5 0 L -10 5 z");
-        arrowHeadPath.setAttribute("fill", options.color);
-
-        arrowHead.appendChild(arrowHeadPath);
-        defs.appendChild(arrowHead);
+        defs.appendChild(createArrowMarker("arrow_start", "start", options));
+        defs.appendChild(createArrowMarker("arrow_end", "end", options));
         svg.appendChild(defs);
 
         const connections = []; // redraw 대상
@@ -53,10 +39,9 @@
                 if (!toItem) return;
 
                 const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-                path.setAttribute("marker-end", "url(#arrowhead_auto)");
-                path.style.stroke = depOptions.color || options.color;
-                path.style.strokeWidth = depOptions.strokeWidth || options.strokeWidth;
                 path.style.fill = "none";
+                applyPathStyle(path, Object.assign({}, options, depOptions));
+                applyArrowDirection(path, depOptions.direction);
 
                 svg.appendChild(path);
 
@@ -68,6 +53,68 @@
                 });
             });
         });
+
+        function createArrowMarker(id, type = "end", options = {}) {
+            const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
+            marker.setAttribute("id", id);
+            marker.setAttribute("refY", "0");
+            marker.setAttribute("markerUnits", "strokeWidth");
+            marker.setAttribute("markerWidth", options.arrowSize);
+            marker.setAttribute("markerHeight", options.arrowSize);
+            marker.setAttribute("orient", "auto");
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("fill", options.color);
+
+            if(type === "start") {
+                marker.setAttribute("viewBox", "0 -5 10 10");
+                marker.setAttribute("refX", "7");
+
+                path.setAttribute("d", "M 0 0 L 10 -5 L 7.5 0 L 10 5 z");
+            } else {
+                marker.setAttribute("viewBox", "-10 -5 10 10");
+                marker.setAttribute("refX", "-7");
+
+                path.setAttribute("d", "M 0 0 L -10 -5 L -7.5 0 L -10 5 z");
+            }
+
+            marker.appendChild(path);
+            return marker;
+        }
+
+        function applyPathStyle(path, options = {}) {
+            if(options.color) path.style.stroke = options.color;
+            if(options.strokeWidth) path.style.strokeWidth = options.strokeWidth;
+
+            // 점선 / 대쉬
+            if(options.dash) path.style.strokeDasharray = options.dash;
+            // 라인 끝 스타일
+            if(options.lineCap) path.style.strokeLinecap = options.lineCap; // butt | round | square
+            // 라인 조인
+            if(options.lineJoin) path.style.strokeLinejoin = options.lineJoin;
+        }
+
+        function applyArrowDirection(path, direction = "forward") {
+            path.removeAttribute("marker-start");
+            path.removeAttribute("marker-end");
+
+            switch (direction) {
+                case "forward":
+                    path.setAttribute("marker-end", "url(#arrow_end)");
+                    break;
+
+                case "backward":
+                    path.setAttribute("marker-start", "url(#arrow_start)");
+                    break;
+
+                case "both":
+                    path.setAttribute("marker-start", "url(#arrow_start)");
+                    path.setAttribute("marker-end", "url(#arrow_end)");
+                    break;
+
+                default: break;
+            }
+        }
 
         function getItemPos(item) {
             const dom = timeline.itemSet.items[item.id];
@@ -86,15 +133,41 @@
             };
         }
 
+        function getAnchors(conn, from, to) {
+            const dir = conn.options.direction || "forward";
+
+            if(dir === "backward") {
+                return {
+                    startX: from.right + 8,
+                    startY: from.midY,
+                    endX: to.left || 0,
+                    endY: to.midY
+                }
+            }else if(dir === "both") {
+                return {
+                    startX: from.right + 8,
+                    startY: from.midY,
+                    endX: to.left - 8,
+                    endY: to.midY
+                }
+            }else{
+                return {
+                    startX: from.right,
+                    startY: from.midY,
+                    endX: to.left - 8,
+                    endY: to.midY
+                }
+            }
+
+        }
+
         function redraw() {
             connections.forEach((conn, index, arr) => {
                 const from = getItemPos(conn.fromItem);
                 const to = getItemPos(conn.toItem);
 
-                const startX = from.right;
-                const startY = from.midY;
-                const endX   = to.left - 6; // arrowhead 공간
-                const endY   = to.midY;
+
+                const {startX, startY, endX, endY} = getAnchors(conn, from, to);
 
                 // 같은 fromItem끼리 겹치지 않게 offset 계산
                 const siblings = arr.filter(c => c.fromItem.id === conn.fromItem.id);
@@ -139,10 +212,9 @@
             if (connections.some(c => c.fromItem.id === fromId && c.toItem.id === toId)) return;
 
             const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            path.setAttribute("marker-end", "url(#arrowhead_auto)");
-            path.style.stroke = depOptions.color || options.color;
-            path.style.strokeWidth = depOptions.strokeWidth || options.strokeWidth;
             path.style.fill = "none";
+            applyPathStyle(path, Object.assign({}, options, depOptions));
+            applyArrowDirection(path, depOptions.direction);
 
             svg.appendChild(path);
 
